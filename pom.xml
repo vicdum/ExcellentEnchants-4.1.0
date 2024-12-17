@@ -35,5 +35,13 @@
             <systemPath>${project.basedir}/libs/nightcore-2.7.3.jar</systemPath>
         </dependency>
     </dependencies>
+    
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
+
 
 </project>

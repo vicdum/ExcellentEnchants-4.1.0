@@ -31,7 +31,8 @@
             <groupId>su.nightexpress.nightcore</groupId>
             <artifactId>nightcore</artifactId>
             <version>2.7.3</version>
-            <scope>compile</scope>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/nightcore-2.7.3.jar</systemPath>
         </dependency>
     </dependencies>
 

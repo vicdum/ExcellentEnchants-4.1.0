@@ -1,239 +1,275 @@
 package su.nightexpress.excellentenchants.command;
 
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import su.nightexpress.excellentenchants.EnchantsPlugin;
-import su.nightexpress.excellentenchants.Placeholders;
+import su.nightexpress.excellentenchants.EnchantsUtils;
+import su.nightexpress.excellentenchants.EnchantsPlaceholders;
 import su.nightexpress.excellentenchants.api.enchantment.CustomEnchantment;
-import su.nightexpress.excellentenchants.api.enchantment.Rarity;
 import su.nightexpress.excellentenchants.config.Config;
 import su.nightexpress.excellentenchants.config.Lang;
 import su.nightexpress.excellentenchants.config.Perms;
-import su.nightexpress.excellentenchants.registry.EnchantRegistry;
-import su.nightexpress.excellentenchants.util.EnchantUtils;
-import su.nightexpress.nightcore.command.experimental.CommandContext;
-import su.nightexpress.nightcore.command.experimental.argument.ArgumentTypes;
-import su.nightexpress.nightcore.command.experimental.argument.ParsedArguments;
-import su.nightexpress.nightcore.command.experimental.impl.ReloadCommand;
-import su.nightexpress.nightcore.command.experimental.node.ChainedNode;
-import su.nightexpress.nightcore.command.experimental.node.DirectNode;
+import su.nightexpress.excellentenchants.enchantment.EnchantRegistry;
+import su.nightexpress.nightcore.commands.Arguments;
+import su.nightexpress.nightcore.commands.Commands;
+import su.nightexpress.nightcore.commands.builder.HubNodeBuilder;
+import su.nightexpress.nightcore.commands.context.CommandContext;
+import su.nightexpress.nightcore.commands.context.ParsedArguments;
+import su.nightexpress.nightcore.core.config.CoreLang;
 import su.nightexpress.nightcore.util.*;
-import su.nightexpress.nightcore.util.random.Rnd;
-
-import java.util.Set;
+import su.nightexpress.nightcore.util.bridge.RegistryType;
 
 public class BaseCommands {
 
-    public static void load(@NotNull EnchantsPlugin plugin) {
-        ChainedNode rootNode = plugin.getRootNode();
+    private final EnchantsPlugin plugin;
 
-        rootNode.addChildren(ReloadCommand.builder(plugin, Perms.COMMAND_RELOAD));
+    public BaseCommands(@NotNull EnchantsPlugin plugin) {
+        this.plugin = plugin;
+    }
 
-        rootNode.addChildren(DirectNode.builder(plugin, "book")
+    public void load(@NotNull HubNodeBuilder builder) {
+        builder.branch(Commands.literal("reload")
+            .description(CoreLang.COMMAND_RELOAD_DESC)
+            .permission(Perms.COMMAND_RELOAD)
+            .executes((context, arguments) -> {
+                this.plugin.doReload(context.getSender());
+                return true;
+            })
+        );
+
+        builder.branch(Commands.literal("book")
             .description(Lang.COMMAND_BOOK_DESC)
             .permission(Perms.COMMAND_BOOK)
-            .withArgument(CommandArguments.enchantArgument(CommandArguments.ENCHANT).required())
-            .withArgument(CommandArguments.levelArgument(CommandArguments.LEVEL))
-            .withArgument(ArgumentTypes.player(CommandArguments.PLAYER))
-            .executes((context, arguments) -> giveBook(plugin, context, arguments))
+            .withArguments(
+                CommandArguments.enchantArgument(CommandArguments.ENCHANT),
+                CommandArguments.levelArgument(CommandArguments.LEVEL).optional(),
+                Arguments.player(CommandArguments.PLAYER).optional()
+            )
+            .withFlags(CommandArguments.FLAG_CHARGED)
+            .executes(this::giveEnchantBook)
         );
 
-        rootNode.addChildren(DirectNode.builder(plugin, "enchant")
+        builder.branch(Commands.literal("randombook")
+            .description(Lang.COMMAND_RANDOM_BOOK_DESC)
+            .permission(Perms.COMMAND_RANDOM_BOOK)
+            .withArguments(Arguments.player(CommandArguments.PLAYER).optional())
+            .withFlags(CommandArguments.FLAG_CUSTOM, CommandArguments.FLAG_CHARGED)
+            .executes(this::giveRandomBook)
+        );
+
+        builder.branch(Commands.literal("enchant")
             .description(Lang.COMMAND_ENCHANT_DESC)
             .permission(Perms.COMMAND_ENCHANT)
-            .withArgument(CommandArguments.enchantArgument(CommandArguments.ENCHANT).required())
-            .withArgument(CommandArguments.levelArgument(CommandArguments.LEVEL).required())
-            .withArgument(ArgumentTypes.player(CommandArguments.PLAYER))
-            .withArgument(CommandArguments.slotArgument(CommandArguments.SLOT))
-            .executes((context, arguments) -> enchantItem(plugin, context, arguments))
+            .withArguments(
+                CommandArguments.enchantArgument(CommandArguments.ENCHANT),
+                CommandArguments.levelArgument(CommandArguments.LEVEL),
+                Arguments.player(CommandArguments.PLAYER).optional(),
+                CommandArguments.slotArgument(CommandArguments.SLOT).optional()
+            )
+            .withFlags(CommandArguments.FLAG_CHARGED)
+            .executes(this::enchantItem)
         );
 
-        rootNode.addChildren(DirectNode.builder(plugin, "disenchant")
+        builder.branch(Commands.literal("disenchant")
             .description(Lang.COMMAND_DISENCHANT_DESC)
             .permission(Perms.COMMAND_DISENCHANT)
-            .withArgument(CommandArguments.enchantArgument(CommandArguments.ENCHANT).required())
-            .withArgument(ArgumentTypes.player(CommandArguments.PLAYER))
-            .withArgument(CommandArguments.slotArgument(CommandArguments.SLOT))
-            .executes((context, arguments) -> disenchantItem(plugin, context, arguments))
+            .withArguments(
+                CommandArguments.enchantArgument(CommandArguments.ENCHANT),
+                Arguments.player(CommandArguments.PLAYER).optional(),
+                CommandArguments.slotArgument(CommandArguments.SLOT).optional()
+            )
+            .executes(this::disenchantItem)
         );
 
-        rootNode.addChildren(DirectNode.builder(plugin, "list")
+        builder.branch(Commands.literal("list")
             .playerOnly()
             .description(Lang.COMMAND_LIST_DESC)
             .permission(Perms.COMMAND_LIST)
-            .withArgument(ArgumentTypes.player(CommandArguments.PLAYER).permission(Perms.COMMAND_LIST_OTHERS))
-            .executes((context, arguments) -> openList(plugin, context, arguments))
-        );
-
-        rootNode.addChildren(DirectNode.builder(plugin, "raritybook")
-            .description(Lang.COMMAND_RARITY_BOOK_DESC)
-            .permission(Perms.COMMAND_RARITY_BOOK)
-            .withArgument(CommandArguments.rarityArgument(plugin, CommandArguments.RARITY).required())
-            .withArgument(CommandArguments.levelArgument(CommandArguments.LEVEL))
-            .withArgument(ArgumentTypes.player(CommandArguments.PLAYER))
-            .executes((context, arguments) -> giveRarityBook(plugin, context, arguments))
+            .withArguments(Arguments.player(CommandArguments.PLAYER).permission(Perms.COMMAND_LIST_OTHERS).optional())
+            .executes(this::openList)
         );
 
         if (Config.isChargesEnabled()) {
-            rootNode.addChildren(DirectNode.builder(plugin, "getfuel")
+            builder.branch(Commands.literal("givefuel")
                 .playerOnly()
-                .description(Lang.COMMAND_GET_FUEL_DESC)
-                .permission(Perms.COMMAND_GET_FUEL)
-                .withArgument(CommandArguments.customEnchantArgument(CommandArguments.ENCHANT).required()
-                    .withSamples(context -> EnchantRegistry.getRegistered().stream().filter(CustomEnchantment::hasCharges).map(CustomEnchantment::getId).toList())
+                .description(Lang.COMMAND_GIVE_FUEL_DESC)
+                .permission(Perms.COMMAND_GIVE_FUEL)
+                .withArguments(
+                    CommandArguments.customEnchantArgument(CommandArguments.ENCHANT)
+                        .suggestions((reader, context) -> EnchantRegistry.getRegistered().stream().filter(CustomEnchantment::isChargeable).map(CustomEnchantment::getId).toList()),
+                    Arguments.integer(CommandArguments.AMOUNT, 1).suggestions((rader, context) -> Lists.newList("1", "8", "16", "32", "64")).optional(),
+                    Arguments.player(CommandArguments.PLAYER).optional()
                 )
-                .withArgument(ArgumentTypes.integerAbs(CommandArguments.AMOUNT).withSamples(context -> Lists.newList("1", "8", "16", "32", "64")))
-                .executes((context, arguments) -> giveFuel(plugin, context, arguments))
+                .executes(this::giveFuel)
             );
         }
     }
 
-    private static int getLevel(@NotNull Enchantment enchantment, @NotNull ParsedArguments arguments) {
-        int level = arguments.getIntArgument(CommandArguments.LEVEL, -1);
+    private int getLevel(@NotNull Enchantment enchantment, @NotNull ParsedArguments arguments) {
+        int level = arguments.getInt(CommandArguments.LEVEL, -1);
         if (level <= 0) {
-            level = EnchantUtils.randomLevel(enchantment);
+            level = EnchantsUtils.randomLevel(enchantment);
         }
         return level;
     }
 
-    public static boolean giveBook(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = CommandUtil.getPlayerOrSender(context, arguments, CommandArguments.PLAYER);
-        if (player == null) return false;
+    private boolean giveEnchantBook(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
+            return false;
+        }
 
-        Enchantment enchantment = arguments.getEnchantmentArgument(CommandArguments.ENCHANT);
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+
+        boolean charged = context.hasFlag(CommandArguments.FLAG_CHARGED);
+        Enchantment enchantment = arguments.getEnchantment(CommandArguments.ENCHANT);
         int level = getLevel(enchantment, arguments);
 
-        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
-        EnchantUtils.add(item, enchantment, level, true);
-        Players.addItem(player, item);
+        return this.giveBook(context.getSender(), player, enchantment, level, charged);
+    }
 
-        Lang.COMMAND_BOOK_DONE.getMessage().send(context.getSender(), replacer -> replacer
-            .replace(Placeholders.GENERIC_ENCHANT, EnchantUtils.getLocalized(enchantment))
-            .replace(Placeholders.forPlayer(player))
+    private boolean giveRandomBook(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
+            return false;
+        }
+
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+
+        boolean custom = context.hasFlag(CommandArguments.FLAG_CUSTOM);
+        boolean charged = context.hasFlag(CommandArguments.FLAG_CHARGED);
+        Enchantment enchantment = Randomizer.pick(custom ? EnchantRegistry.getRegisteredBukkit() : BukkitThing.getAll(RegistryType.ENCHANTMENT));
+        int level = EnchantsUtils.randomLevel(enchantment);
+
+        return this.giveBook(context.getSender(), player, enchantment, level, charged);
+    }
+
+    private boolean giveBook(@NotNull CommandSender sender, @NotNull Player player, @NotNull Enchantment enchantment, int level, boolean charged) {
+        ItemStack itemStack = new ItemStack(Material.ENCHANTED_BOOK);
+        if (charged) {
+            EnchantsUtils.restoreCharges(itemStack, enchantment, level);
+        }
+
+        EnchantsUtils.add(itemStack, enchantment, level, true);
+        Players.addItem(player, itemStack);
+
+        Lang.ENCHANTED_BOOK_GAVE.message().send(sender, replacer -> replacer
+            .replace(EnchantsPlaceholders.GENERIC_ENCHANT, LangUtil.getSerializedName(enchantment))
+            .replace(EnchantsPlaceholders.GENERIC_LEVEL, NumberUtil.toRoman(level))
+            .replace(EnchantsPlaceholders.forPlayer(player))
         );
 
         return true;
     }
 
-    public static boolean enchantItem(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = CommandUtil.getPlayerOrSender(context, arguments, CommandArguments.PLAYER);
-        if (player == null) return false;
-
-        EquipmentSlot slot = arguments.getArgument(CommandArguments.SLOT, EquipmentSlot.class, EquipmentSlot.HAND);
-
-        ItemStack item = player.getInventory().getItem(slot);
-        if (item == null || item.getType().isAir()) {
-            Lang.COMMAND_ENCHANT_ERROR_NO_ITEM.getMessage().send(context.getSender());
+    private boolean enchantItem(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
             return false;
         }
 
-        Enchantment enchantment = arguments.getEnchantmentArgument(CommandArguments.ENCHANT);
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+        EquipmentSlot slot = arguments.getOr(CommandArguments.SLOT, EquipmentSlot.class, EquipmentSlot.HAND);
+
+        ItemStack itemStack = EntityUtil.getItemInSlot(player, slot);
+        if (itemStack == null || itemStack.getType().isAir()) {
+            context.send(Lang.COMMAND_ENCHANT_ERROR_NO_ITEM);
+            return false;
+        }
+
+        boolean charged = context.hasFlag(CommandArguments.FLAG_CHARGED);
+        Enchantment enchantment = arguments.getEnchantment(CommandArguments.ENCHANT);
         int level = getLevel(enchantment, arguments);
 
-        if (level > 0) {
-            EnchantUtils.add(item, enchantment, level, true);
+        EnchantsUtils.add(itemStack, enchantment, level, true);
+
+        if (charged) {
+            EnchantsUtils.restoreCharges(itemStack, enchantment, level);
         }
 
-        (context.getSender() == player ? Lang.COMMAND_ENCHANT_DONE_SELF : Lang.COMMAND_ENCHANT_DONE_OTHERS).getMessage().send(context.getSender(), replacer -> replacer
-            .replace(Placeholders.forPlayer(player))
-            .replace(Placeholders.GENERIC_ITEM, ItemUtil.getItemName(item))
-            .replace(Placeholders.GENERIC_ENCHANT, EnchantUtils.getLocalized(enchantment))
-            .replace(Placeholders.GENERIC_LEVEL, NumberUtil.toRoman(level))
+        context.send(context.getSender() == player ? Lang.COMMAND_ENCHANT_DONE_SELF : Lang.COMMAND_ENCHANT_DONE_OTHERS, replacer -> replacer
+            .replace(EnchantsPlaceholders.forPlayer(player))
+            .replace(EnchantsPlaceholders.GENERIC_ITEM, ItemUtil.getNameSerialized(itemStack))
+            .replace(EnchantsPlaceholders.GENERIC_ENCHANT, LangUtil.getSerializedName(enchantment))
+            .replace(EnchantsPlaceholders.GENERIC_LEVEL, NumberUtil.toRoman(level))
         );
 
         return true;
     }
 
-    public static boolean disenchantItem(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = CommandUtil.getPlayerOrSender(context, arguments, CommandArguments.PLAYER);
-        if (player == null) return false;
-
-        EquipmentSlot slot = arguments.getArgument(CommandArguments.SLOT, EquipmentSlot.class, EquipmentSlot.HAND);
-
-        ItemStack item = player.getInventory().getItem(slot);
-        if (item == null || item.getType().isAir()) {
-            Lang.COMMAND_ENCHANT_ERROR_NO_ITEM.getMessage().send(context.getSender());
+    private boolean disenchantItem(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
             return false;
         }
 
-        Enchantment enchantment = arguments.getEnchantmentArgument(CommandArguments.ENCHANT);
-        EnchantUtils.remove(item, enchantment);
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+        EquipmentSlot slot = arguments.getOr(CommandArguments.SLOT, EquipmentSlot.class, EquipmentSlot.HAND);
 
-        (context.getSender() == player ? Lang.COMMAND_DISENCHANT_DONE_SELF : Lang.COMMAND_DISENCHANT_DONE_OTHERS).getMessage().send(context.getSender(), replacer -> replacer
-            .replace(Placeholders.forPlayer(player))
-            .replace(Placeholders.GENERIC_ITEM, ItemUtil.getItemName(item))
-            .replace(Placeholders.GENERIC_ENCHANT, EnchantUtils.getLocalized(enchantment))
+        ItemStack itemStack = EntityUtil.getItemInSlot(player, slot);
+        if (itemStack == null || itemStack.getType().isAir()) {
+            context.send(Lang.COMMAND_ENCHANT_ERROR_NO_ITEM);
+            return false;
+        }
+
+        Enchantment enchantment = arguments.getEnchantment(CommandArguments.ENCHANT);
+        EnchantsUtils.remove(itemStack, enchantment);
+
+        context.send(context.getSender() == player ? Lang.COMMAND_DISENCHANT_DONE_SELF : Lang.COMMAND_DISENCHANT_DONE_OTHERS, replacer -> replacer
+            .replace(EnchantsPlaceholders.forPlayer(player))
+            .replace(EnchantsPlaceholders.GENERIC_ITEM, ItemUtil.getNameSerialized(itemStack))
+            .replace(EnchantsPlaceholders.GENERIC_ENCHANT, LangUtil.getSerializedName(enchantment))
         );
 
         return true;
     }
 
-    public static boolean giveFuel(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = context.getPlayerOrThrow();
-        CustomEnchantment enchantment = arguments.getArgument(CommandArguments.ENCHANT, CustomEnchantment.class);
-        int amount = arguments.getIntArgument(CommandArguments.AMOUNT, 1);
-
-        if (!enchantment.hasCharges()) {
-            Lang.COMMAND_GET_FUEL_ERROR_NO_CHARGES.getMessage().send(context.getSender(), replacer -> replacer
-                .replace(Placeholders.GENERIC_NAME, enchantment.getDisplayName())
-            );
+    private boolean giveFuel(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
             return false;
         }
 
-        ItemStack fuel = enchantment.getCharges().getFuel();
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+        CustomEnchantment enchantment = arguments.get(CommandArguments.ENCHANT, CustomEnchantment.class);
+        int amount = arguments.getInt(CommandArguments.AMOUNT, 1);
+
+        if (!enchantment.isChargeable()) {
+            context.send(Lang.CHARGES_FUEL_BAD_ENCHANTMENT, replacer -> replacer.replace(EnchantsPlaceholders.GENERIC_NAME, enchantment.getDisplayName()));
+            return false;
+        }
+
+        ItemStack fuel = enchantment.getFuel();
         fuel.setAmount(amount);
 
         Players.addItem(player, fuel);
 
-        Lang.COMMAND_GET_FUEL_DONE.getMessage().send(context.getSender(), replacer -> replacer
-            .replace(Placeholders.GENERIC_AMOUNT, NumberUtil.format(amount))
-            .replace(Placeholders.GENERIC_NAME, ItemUtil.getItemName(fuel))
+        context.send(Lang.CHARGES_FUEL_GAVE, replacer -> replacer
+            .replace(EnchantsPlaceholders.GENERIC_AMOUNT, NumberUtil.format(amount))
+            .replace(EnchantsPlaceholders.GENERIC_NAME, ItemUtil.getNameSerialized(fuel))
+            .replace(EnchantsPlaceholders.forPlayer(player))
         );
 
         return true;
     }
 
-    public static boolean openList(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = CommandUtil.getPlayerOrSender(context, arguments, CommandArguments.PLAYER);
-        if (player == null) return false;
-
-        plugin.getEnchantManager().openEnchantsMenu(player);
-
-        if (player != context.getSender()) {
-            Lang.COMMAND_LIST_DONE_OTHERS.getMessage().send(context.getSender(), replacer -> replacer.replace(Placeholders.forPlayer(player)));
-        }
-        return true;
-    }
-
-    public static boolean giveRarityBook(@NotNull EnchantsPlugin plugin, @NotNull CommandContext context, @NotNull ParsedArguments arguments) {
-        Player player = CommandUtil.getPlayerOrSender(context, arguments, CommandArguments.PLAYER);
-        if (player == null) return false;
-
-        Rarity rarity = arguments.getArgument(CommandArguments.RARITY, Rarity.class);
-
-        Set<CustomEnchantment> enchants = EnchantRegistry.getByRarity(rarity);
-        CustomEnchantment customEnchantment = enchants.isEmpty() ? null : Rnd.get(enchants);
-        if (customEnchantment == null) {
-            Lang.COMMAND_RARITY_BOOK_ERROR_EMPTY.getMessage().send(context.getSender());
+    private boolean openList(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
+        if (!context.isPlayer() && !arguments.contains(CommandArguments.PLAYER)) {
+            context.printUsage();
             return false;
         }
 
-        Enchantment enchantment = customEnchantment.getBukkitEnchantment();
-        int level = getLevel(enchantment, arguments);
+        Player player = arguments.contains(CommandArguments.PLAYER) ? arguments.getPlayer(CommandArguments.PLAYER) : context.getPlayerOrThrow();
+        this.plugin.getEnchantManager().openEnchantsMenu(player);
 
-        ItemStack item = new ItemStack(Material.ENCHANTED_BOOK);
-        EnchantUtils.add(item, enchantment, level, true);
-        Players.addItem(player, item);
-
-        Lang.COMMAND_RARITY_BOOK_DONE.getMessage().send(context.getSender(), replacer -> replacer
-            .replace(Placeholders.GENERIC_NAME, rarity.getName())
-            .replace(Placeholders.forPlayer(player))
-        );
-
+        if (player != context.getSender()) {
+            context.send(Lang.COMMAND_LIST_DONE_OTHERS, replacer -> replacer.replace(EnchantsPlaceholders.forPlayer(player)));
+        }
         return true;
     }
 }

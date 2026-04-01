@@ -1,106 +1,65 @@
 package su.nightexpress.excellentenchants.config;
 
-import su.nightexpress.nightcore.core.CoreLang;
-import su.nightexpress.nightcore.language.entry.LangString;
-import su.nightexpress.nightcore.language.entry.LangText;
+import su.nightexpress.nightcore.locale.LangContainer;
+import su.nightexpress.nightcore.locale.LangEntry;
+import su.nightexpress.nightcore.locale.entry.MessageLocale;
+import su.nightexpress.nightcore.locale.entry.TextLocale;
 
-import static su.nightexpress.excellentenchants.Placeholders.*;
-import static su.nightexpress.nightcore.util.text.tag.Tags.*;
+import static su.nightexpress.excellentenchants.EnchantsPlaceholders.*;
+import static su.nightexpress.nightcore.util.text.night.wrapper.TagWrappers.*;
 
-public class Lang extends CoreLang {
+public class Lang implements LangContainer {
 
-    public static final LangString COMMAND_ARGUMENT_NAME_LEVEL  = LangString.of("Command.Argument.Name.Level", "level");
-    public static final LangString COMMAND_ARGUMENT_NAME_SLOT   = LangString.of("Command.Argument.Name.Slot", "slot");
-    public static final LangString COMMAND_ARGUMENT_NAME_RARITY = LangString.of("Command.Argument.Name.Rarity", "rarity");
+    public static final TextLocale COMMAND_ARGUMENT_NAME_LEVEL = LangEntry.builder("Command.Argument.Name.Level").text("level");
+    public static final TextLocale COMMAND_ARGUMENT_NAME_SLOT  = LangEntry.builder("Command.Argument.Name.Slot").text("slot");
 
-    public static final LangString COMMAND_LIST_DESC        = LangString.of("Command.List.Desc", "List of custom enchantments.");
-    public static final LangString COMMAND_ENCHANT_DESC     = LangString.of("Command.Enchant.Desc", "Enchant item in specific slot.");
-    public static final LangString COMMAND_DISENCHANT_DESC  = LangString.of("Command.Disenchant.Desc", "Disenchant item in specific slot.");
-    public static final LangString COMMAND_BOOK_DESC        = LangString.of("Command.Book.Desc", "Give a book with specific enchantment.");
-    public static final LangString COMMAND_RARITY_BOOK_DESC = LangString.of("Command.RarityBook.Desc", "Give a book with enchantment of specific rarity.");
-    public static final LangString COMMAND_GET_FUEL_DESC    = LangString.of("Command.GetFuel.Desc", "Get enchantment fuel item.");
+    public static final TextLocale COMMAND_LIST_DESC        = LangEntry.builder("Command.List.Desc").text("List of custom enchantments.");
+    public static final TextLocale COMMAND_ENCHANT_DESC     = LangEntry.builder("Command.Enchant.Desc").text("Enchant item in specific slot.");
+    public static final TextLocale COMMAND_DISENCHANT_DESC  = LangEntry.builder("Command.Disenchant.Desc").text("Disenchant item in specific slot.");
+    public static final TextLocale COMMAND_BOOK_DESC        = LangEntry.builder("Command.Book.Desc").text("Give a book with specific enchantment.");
+    public static final TextLocale COMMAND_RANDOM_BOOK_DESC = LangEntry.builder("Command.RandomBook.Desc").text("Give a book with random enchantment.");
+    public static final TextLocale COMMAND_GIVE_FUEL_DESC   = LangEntry.builder("Command.GiveFuel.Desc").text("Give enchantment fuel item.");
 
-    public static final LangText COMMAND_LIST_DONE_OTHERS = LangText.of("Command.List.DoneOthers",
-        LIGHT_GRAY.enclose("Opened enchantments GUI for " + LIGHT_YELLOW.enclose(PLAYER_NAME) + ".")
+    public static final MessageLocale COMMAND_LIST_DONE_OTHERS = LangEntry.builder("Command.List.DoneOthers").chatMessage(
+        GRAY.wrap("Opened enchantments GUI for " + SOFT_YELLOW.wrap(PLAYER_NAME) + ".")
     );
 
 
-    public static final LangText COMMAND_GET_FUEL_DONE = LangText.of("Command.GetFuel.Done",
-        LIGHT_GRAY.enclose("You got " + LIGHT_YELLOW.enclose("x" + GENERIC_AMOUNT + " " + GENERIC_NAME) + ".")
+    public static final MessageLocale COMMAND_ENCHANT_DONE_SELF = LangEntry.builder("Command.Enchant.Done.Self").chatMessage(
+        GRAY.wrap(SOFT_YELLOW.wrap(GENERIC_ITEM) + " enchanted with " + SOFT_YELLOW.wrap(GENERIC_ENCHANT + " " + GENERIC_LEVEL) + "!")
     );
 
-    public static final LangText COMMAND_GET_FUEL_ERROR_NO_CHARGES = LangText.of("Command.GetFuel.Error.NoCharges",
-        LIGHT_GRAY.enclose("Enchantment " + LIGHT_RED.enclose(GENERIC_NAME) + " don't have charges.")
+    public static final MessageLocale COMMAND_ENCHANT_DONE_OTHERS = LangEntry.builder("Command.Enchant.Done.Others").chatMessage(
+        GRAY.wrap(SOFT_YELLOW.wrap(PLAYER_DISPLAY_NAME) + "'s " + SOFT_YELLOW.wrap(GENERIC_ITEM) + " enchanted with " + SOFT_YELLOW.wrap(GENERIC_ENCHANT + " " + GENERIC_LEVEL) + "!")
     );
 
-
-    public static final LangText COMMAND_ENCHANT_DONE_SELF = LangText.of("Command.Enchant.Done.Self",
-        LIGHT_GRAY.enclose(LIGHT_YELLOW.enclose(GENERIC_ITEM) + " enchanted with " + LIGHT_YELLOW.enclose(GENERIC_ENCHANT + " " + GENERIC_LEVEL) + "!")
+    public static final MessageLocale COMMAND_DISENCHANT_DONE_SELF = LangEntry.builder("Command.Disenchant.Done.Self").chatMessage(
+        GRAY.wrap(SOFT_YELLOW.wrap(GENERIC_ITEM) + " disenchanted from " + SOFT_YELLOW.wrap(GENERIC_ENCHANT) + "!")
     );
 
-    public static final LangText COMMAND_ENCHANT_DONE_OTHERS = LangText.of("Command.Enchant.Done.Others",
-        LIGHT_GRAY.enclose(LIGHT_YELLOW.enclose(PLAYER_DISPLAY_NAME) + "'s " + LIGHT_YELLOW.enclose(GENERIC_ITEM) + " enchanted with " + LIGHT_YELLOW.enclose(GENERIC_ENCHANT + " " + GENERIC_LEVEL) + "!")
+    public static final MessageLocale COMMAND_DISENCHANT_DONE_OTHERS = LangEntry.builder("Command.Disenchant.Done.Others").chatMessage(
+        GRAY.wrap(SOFT_YELLOW.wrap(PLAYER_DISPLAY_NAME) + "'s " + SOFT_YELLOW.wrap(GENERIC_ITEM) + " disenchanted from " + SOFT_YELLOW.wrap(GENERIC_ENCHANT) + "!")
     );
 
-    public static final LangText COMMAND_DISENCHANT_DONE_SELF = LangText.of("Command.Disenchant.Done.Self",
-        LIGHT_GRAY.enclose(LIGHT_YELLOW.enclose(GENERIC_ITEM) + " disenchanted from " + LIGHT_YELLOW.enclose(GENERIC_ENCHANT) + "!")
-    );
-
-    public static final LangText COMMAND_DISENCHANT_DONE_OTHERS = LangText.of("Command.Disenchant.Done.Others",
-        LIGHT_GRAY.enclose(LIGHT_YELLOW.enclose(PLAYER_DISPLAY_NAME) + "'s " + LIGHT_YELLOW.enclose(GENERIC_ITEM) + " disenchanted from " + LIGHT_YELLOW.enclose(GENERIC_ENCHANT) + "!")
-    );
-
-    public static final LangText COMMAND_ENCHANT_ERROR_NO_ITEM = LangText.of("Command.Enchant.Error.NoItem",
-        LIGHT_RED.enclose("There is no item to enchant!")
+    public static final MessageLocale COMMAND_ENCHANT_ERROR_NO_ITEM = LangEntry.builder("Command.Enchant.Error.NoItem").chatMessage(
+        SOFT_RED.wrap("There is no item to enchant!")
     );
 
 
-    public static final LangText COMMAND_BOOK_DONE = LangText.of("Command.Book.Done",
-        LIGHT_GRAY.enclose("Given " + LIGHT_YELLOW.enclose(GENERIC_ENCHANT) + " enchanted book to " + LIGHT_YELLOW.enclose(PLAYER_DISPLAY_NAME) + ".")
+    public static final MessageLocale ENCHANTED_BOOK_GAVE = LangEntry.builder("Command.Book.Done").chatMessage(
+        GRAY.wrap("You gave " + SOFT_YELLOW.wrap(GENERIC_ENCHANT + " " + GENERIC_LEVEL) + " book to " + SOFT_YELLOW.wrap(PLAYER_DISPLAY_NAME) + ".")
+    );
+
+    public static final MessageLocale CHARGES_FUEL_GAVE = LangEntry.builder("Charges.Fuel.Gave").chatMessage(
+        GRAY.wrap("You gave " + SOFT_YELLOW.wrap("x" + GENERIC_AMOUNT + " " + GENERIC_NAME) + " fuel to " + SOFT_YELLOW.wrap(PLAYER_NAME) + ".")
+    );
+
+    public static final MessageLocale CHARGES_FUEL_BAD_ENCHANTMENT = LangEntry.builder("Charges.Fuel.BadEnchantment").chatMessage(
+        GRAY.wrap("Enchantment " + SOFT_RED.wrap(GENERIC_NAME) + " can't be charged.")
     );
 
 
-    public static final LangText COMMAND_RARITY_BOOK_DONE = LangText.of("Command.RarityBook.Done",
-        LIGHT_GRAY.enclose("Given " + LIGHT_YELLOW.enclose(GENERIC_NAME) + " enchanted book to " + LIGHT_YELLOW.enclose(PLAYER_DISPLAY_NAME) + ".")
+    public static final MessageLocale COMMAND_SYNTAX_INVALID_SLOT = LangEntry.builder("Command.Syntax.InvalidSlot").chatMessage(
+        GRAY.wrap(SOFT_RED.wrap(GENERIC_INPUT) + " is not a valid slot!")
     );
-
-    public static final LangText COMMAND_RARITY_BOOK_ERROR_EMPTY = LangText.of("Command.RarityBook.Error.Empty",
-        LIGHT_GRAY.enclose("There is no enchantments with the " + LIGHT_RED.enclose(GENERIC_NAME) + " rarity!")
-    );
-
-
-
-    public static final LangText ERROR_COMMAND_INVALID_RARITY_ARGUMENT = LangText.of("Error.Command.Argument.InvalidRarity",
-        LIGHT_GRAY.enclose(LIGHT_RED.enclose(GENERIC_VALUE) + " is not a valid rarity!")
-    );
-
-    public static final LangText ERROR_COMMAND_INVALID_SLOT_ARGUMENT = LangText.of("Error.Command.Argument.InvalidSlot",
-        LIGHT_GRAY.enclose(LIGHT_RED.enclose(GENERIC_VALUE) + " is not a valid slot!")
-    );
-
-    public static final LangString ITEM_CATEGORY_HELMET     = LangString.of("ItemCategory.Helmet", "Helmet");
-    public static final LangString ITEM_CATEGORY_CHESTPLATE = LangString.of("ItemCategory.Chestplate", "Chestplate");
-    public static final LangString ITEM_CATEGORY_LEGGINGS   = LangString.of("ItemCategory.Leggings", "Leggings");
-    public static final LangString ITEM_CATEGORY_BOOTS      = LangString.of("ItemCategory.Boots", "Boots");
-    public static final LangString ITEM_CATEGORY_ELYTRA     = LangString.of("ItemCategory.Elytra", "Elytra");
-
-    public static final LangString ITEM_CATEGORY_SWORD       = LangString.of("ItemCategory.Sword", "Sword");
-    public static final LangString ITEM_CATEGORY_AXE         = LangString.of("ItemCategory.Axe", "Axe");
-    public static final LangString ITEM_CATEGORY_HOE         = LangString.of("ItemCategory.Hoe", "Hoe");
-    public static final LangString ITEM_CATEGORY_PICKAXE     = LangString.of("ItemCategory.Pickaxe", "Pickaxe");
-    public static final LangString ITEM_CATEGORY_SHOVEL      = LangString.of("ItemCategory.Shovel", "Shovel");
-    public static final LangString ITEM_CATEGORY_TRIDENT     = LangString.of("ItemCategory.Trident", "Trident");
-    public static final LangString ITEM_CATEGORY_BOW         = LangString.of("ItemCategory.Bow", "Bow");
-    public static final LangString ITEM_CATEGORY_CROSSBOW    = LangString.of("ItemCategory.Crossbow", "Crossbow");
-    public static final LangString ITEM_CATEGORY_FISHING_ROD = LangString.of("ItemCategory.FishingRod", "FishingRod");
-    public static final LangString ITEM_CATEGORY_SHIELD      = LangString.of("ItemCategory.Shield", "Shield");
-
-    public static final LangString ITEM_CATEGORY_BREAKABLE    = LangString.of("ItemCategory.Breakable", "Breakable");
-    public static final LangString ITEM_CATEGORY_ARMOR        = LangString.of("ItemCategory.Armor", "Armor");
-    public static final LangString ITEM_CATEGORY_TOOL         = LangString.of("ItemCategory.Tool", "Tool");
-    public static final LangString ITEM_CATEGORY_WEAPON       = LangString.of("ItemCategory.Weapon", "Sword/Axe");
-    public static final LangString ITEM_CATEGORY_BOWS         = LangString.of("ItemCategory.Bows", "Bow/Crossbow");
-    public static final LangString ITEM_CATEGORY_TORSO        = LangString.of("ItemCategory.Torso", "Chestplate/Elytra");
-    public static final LangString ITEM_CATEGORY_ALL_WEAPON   = LangString.of("ItemCategory.AllWeapon", "All Weapon");
-    public static final LangString ITEM_CATEGORY_MINING_TOOLS = LangString.of("ItemCategory.MiningTools", "Mining Tools");
 }

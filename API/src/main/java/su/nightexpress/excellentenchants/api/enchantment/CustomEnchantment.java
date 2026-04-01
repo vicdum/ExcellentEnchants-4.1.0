@@ -1,62 +1,55 @@
 package su.nightexpress.excellentenchants.api.enchantment;
 
-import org.bukkit.World;
+import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
-import su.nightexpress.excellentenchants.api.enchantment.meta.MetaHolder;
-import su.nightexpress.nightcore.config.FileConfig;
+import su.nightexpress.excellentenchants.api.enchantment.component.EnchantComponent;
+import su.nightexpress.excellentenchants.api.enchantment.meta.Charges;
+import su.nightexpress.excellentenchants.api.item.ItemSet;
+import su.nightexpress.excellentenchants.api.EnchantDefinition;
+import su.nightexpress.excellentenchants.api.EnchantDistribution;
 
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-public interface CustomEnchantment extends MetaHolder {
+public interface CustomEnchantment {
 
-//    default void clear() {
-//
-//    }
+    void load();
+
+    <T> boolean hasComponent(@NotNull EnchantComponent<T> type);
+
+    @NotNull <T> T getComponent(@NotNull EnchantComponent<T> type);
 
     @NotNull UnaryOperator<String> replacePlaceholders(int level);
 
-    @NotNull FileConfig getConfig();
-
     @NotNull Enchantment getBukkitEnchantment();
 
-    @NotNull Definition getDefinition();
+    @NotNull EnchantDefinition getDefinition();
 
-    @NotNull Distribution getDistribution();
+    @NotNull EnchantDistribution getDistribution();
 
     @NotNull Charges getCharges();
 
-    boolean load();
+    boolean testTriggerChance(int level);
 
-    boolean checkServerRequirements();
-
-    boolean isAvailableToUse(@NotNull LivingEntity entity);
-
-    boolean isAvailableToUse(@NotNull World world);
-
-    default boolean isSupportedItem(@NotNull ItemStack itemStack) {
-        return this.getDefinition().getSupportedItems().is(itemStack);
-    }
-
-    default boolean isPrimaryItem(@NotNull ItemStack itemStack) {
-        return this.getDefinition().getPrimaryItems().is(itemStack);
-    }
+    boolean isTriggerTime(@NotNull LivingEntity entity);
 
     @NotNull String getId();
 
-    @NotNull String getDisplayName();
+    @NotNull NamespacedKey getKey();
 
-    @NotNull String getFormattedName();
+    @NotNull String getDisplayName();
 
     @NotNull List<String> getDescription();
 
     @NotNull List<String> getDescription(int level);
 
-    @NotNull List<String> getDescription(int level, int charges);
+    @NotNull ItemSet getPrimaryItems();
+
+    @NotNull ItemSet getSupportedItems();
 
     boolean isCurse();
 
@@ -64,13 +57,17 @@ public interface CustomEnchantment extends MetaHolder {
 
     boolean hasVisualEffects();
 
-    boolean hasCharges();
+    boolean isChargeable();
 
     boolean isChargesFuel(@NotNull ItemStack item);
+
+    @NotNull ItemStack getFuel();
 
     int getCharges(@NotNull ItemStack item);
 
     int getCharges(@NotNull ItemMeta meta);
+
+    int getMaxCharges(int level);
 
     void setCharges(@NotNull ItemStack item, int level, int amount);
 
